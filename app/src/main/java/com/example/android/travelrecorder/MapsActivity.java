@@ -211,13 +211,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //                .add(new LatLng(37.35, -122.0));
 
         // Get back the mutable Polyline
-        Polyline polyline = map.addPolyline(rectOptions);
         List<LatLng> points = new ArrayList<>();
 
         points=getAllPoints();
-//        points.add(new LatLng(37.35, -122.0));
-//        points.add(new LatLng(37.36, -122.1));
-        rectOptions.add(new LatLng(37.35, -122.0));
+
+        for(int index=0;index<points.size();index++){
+            rectOptions.add(points.get(index));
+            Polyline polyline = map.addPolyline(rectOptions);
+        }
+
 //        polyline.setPoints(points);
     }
     public List<LatLng> getAllPoints() {
