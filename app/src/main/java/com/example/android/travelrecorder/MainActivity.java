@@ -44,6 +44,15 @@ public class MainActivity extends AppCompatActivity
                 startActivity(intent);
             }
         });
+       Button logButton = (Button) findViewById(R.id.logButton);
+        logButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, LoginActivity2.class);
+                startActivity(intent);
+            }
+        });
+
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -117,22 +126,88 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+//    private void displayDatabaseInfo() {
+//        // Create and/or open a database to read from it
+//        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+//
+//        // Define a projection that specifies which columns from the database
+//        // you will actually use after this query.
+//        String[] projection = {
+//                TravelContract.TravelEntry._ID,
+//                TravelContract.TravelEntry.COLUMN_LATITUDE,
+//                TravelContract.TravelEntry.COLUMN_LONGTITUDE,
+//                TravelContract.TravelEntry.COLUMN_TIMESTAMP };
+//
+//        // Perform a query on the pets table
+//        Cursor cursor = db.query(
+//                TravelContract.TravelEntry.TABLE_NAME,   // The table to query
+//                projection,            // The columns to return
+//                null,                  // The columns for the WHERE clause
+//                null,                  // The values for the WHERE clause
+//                null,                  // Don't group the rows
+//                null,                  // Don't filter by row groups
+//                null);                   // The sort order
+//
+//        TextView displayView = (TextView) findViewById(R.id.main_textview);
+//
+//        try {
+//            // Create a header in the Text View that looks like this:
+//            //
+//            // The pets table contains <number of rows in Cursor> pets.
+//            // _id - name - breed - gender - weight
+//            //
+//            // In the while loop below, iterate through the rows of the cursor and display
+//            // the information from each column in this order.
+//            displayView.setText("The location table contains " + cursor.getCount() + " locations.\n\n");
+//            displayView.append(TravelContract.TravelEntry._ID + " - " +
+//                    TravelContract.TravelEntry.COLUMN_LATITUDE + " - " +
+//                    TravelContract.TravelEntry.COLUMN_LONGTITUDE + " - " +
+//                    TravelContract.TravelEntry.COLUMN_TIMESTAMP + "\n");
+//
+//            // Figure out the index of each column
+//            int idColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry._ID);
+//            int latitudeColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry.COLUMN_LATITUDE);
+//            int longtitudeColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry.COLUMN_LONGTITUDE);
+//            int timeColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry.COLUMN_TIMESTAMP);
+//
+//
+//            // Iterate through all the returned rows in the cursor
+//            while (cursor.moveToNext()) {
+//                // Use that index to extract the String or Int value of the word
+//                // at the current row the cursor is on.
+//                int currentID = cursor.getInt(idColumnIndex);
+//                double currentLatitude = cursor.getDouble(latitudeColumnIndex);
+//                double currentLongtitude = cursor.getDouble(longtitudeColumnIndex);
+//                int currentTime = cursor.getInt(timeColumnIndex);
+//
+//                // Display the values from each column of the current row in the cursor in the TextView
+//                displayView.append(("\n" + currentID + " - " +
+//                        currentLatitude + " - " +
+//                        currentLongtitude + " - " +
+//                        currentTime ));
+//            }
+//        } finally {
+//            // Always close the cursor when you're done reading from it. This releases all its
+//            // resources and makes it invalid.
+//            cursor.close();
+//        }
+//    }
+
     private void displayDatabaseInfo() {
         // Create and/or open a database to read from it
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
         // Define a projection that specifies which columns from the database
-        // you will actually use after this query.
+//         you will actually use after this query.
         String[] projection = {
-                TravelContract.TravelEntry._ID,
-                TravelContract.TravelEntry.COLUMN_LATITUDE,
-                TravelContract.TravelEntry.COLUMN_LONGTITUDE,
-                TravelContract.TravelEntry.COLUMN_TIMESTAMP };
+                TravelContract.UsersEntry._ID,
+                TravelContract.UsersEntry.COLUMN_EAMIL,
+                TravelContract.UsersEntry.COLUMN_PASSWORD,
+        };
 
-        // Perform a query on the pets table
         Cursor cursor = db.query(
-                TravelContract.TravelEntry.TABLE_NAME,   // The table to query
-                projection,            // The columns to return
+                TravelContract.UsersEntry.TABLE_NAME,   // The table to query
+                projection,      // The columns to return
                 null,                  // The columns for the WHERE clause
                 null,                  // The values for the WHERE clause
                 null,                  // Don't group the rows
@@ -149,33 +224,27 @@ public class MainActivity extends AppCompatActivity
             //
             // In the while loop below, iterate through the rows of the cursor and display
             // the information from each column in this order.
-            displayView.setText("The location table contains " + cursor.getCount() + " locations.\n\n");
-            displayView.append(TravelContract.TravelEntry._ID + " - " +
-                    TravelContract.TravelEntry.COLUMN_LATITUDE + " - " +
-                    TravelContract.TravelEntry.COLUMN_LONGTITUDE + " - " +
-                    TravelContract.TravelEntry.COLUMN_TIMESTAMP + "\n");
+            displayView.setText("The users table contains " + cursor.getCount() + " users.\n\n");
+            displayView.append(TravelContract.UsersEntry._ID + " - " +
+                    TravelContract.UsersEntry.COLUMN_EAMIL + " - " +
+                    TravelContract.UsersEntry.COLUMN_PASSWORD + "\n");
 
             // Figure out the index of each column
-            int idColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry._ID);
-            int latitudeColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry.COLUMN_LATITUDE);
-            int longtitudeColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry.COLUMN_LONGTITUDE);
-            int timeColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry.COLUMN_TIMESTAMP);
-
+            int idColumnIndex = cursor.getColumnIndex(TravelContract.UsersEntry._ID);
+            int latitudeColumnIndex = cursor.getColumnIndex(TravelContract.UsersEntry.COLUMN_EAMIL);
+            int longtitudeColumnIndex = cursor.getColumnIndex(TravelContract.UsersEntry.COLUMN_PASSWORD);
 
             // Iterate through all the returned rows in the cursor
             while (cursor.moveToNext()) {
                 // Use that index to extract the String or Int value of the word
                 // at the current row the cursor is on.
                 int currentID = cursor.getInt(idColumnIndex);
-                double currentLatitude = cursor.getDouble(latitudeColumnIndex);
-                double currentLongtitude = cursor.getDouble(longtitudeColumnIndex);
-                int currentTime = cursor.getInt(timeColumnIndex);
-
+                String currentLatitude = cursor.getString(latitudeColumnIndex);
+                String currentLongtitude = cursor.getString(longtitudeColumnIndex);
                 // Display the values from each column of the current row in the cursor in the TextView
                 displayView.append(("\n" + currentID + " - " +
                         currentLatitude + " - " +
-                        currentLongtitude + " - " +
-                        currentTime ));
+                        currentLongtitude));
             }
         } finally {
             // Always close the cursor when you're done reading from it. This releases all its
@@ -183,5 +252,4 @@ public class MainActivity extends AppCompatActivity
             cursor.close();
         }
     }
-
 }

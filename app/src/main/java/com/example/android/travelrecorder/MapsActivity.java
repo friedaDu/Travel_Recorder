@@ -61,7 +61,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(TravelContract.TravelEntry.COLUMN_LATITUDE,lat.latitude);
-        values.put(TravelContract.TravelEntry.COLUMN_LONGTITUDE,lat.longitude);
+        values.put(TravelContract.TravelEntry.COLUMN_LONGITUDE,lat.longitude);
         values.put(TravelContract.TravelEntry.COLUMN_TIMESTAMP,System.currentTimeMillis());
         long newRowId = db.insert(TravelContract.TravelEntry.TABLE_NAME, null, values);
         if (newRowId == -1) {
@@ -230,14 +230,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Cursor cursor = db.rawQuery(sql, null);
         while (cursor.moveToNext()) {
             int latitudeColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry.COLUMN_LATITUDE);
-            int longtitudeColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry.COLUMN_LONGTITUDE);
+            int longtitudeColumnIndex = cursor.getColumnIndex(TravelContract.TravelEntry.COLUMN_LONGITUDE);
             double currentLatitude = cursor.getDouble(latitudeColumnIndex);
-            double currentLongtitude = cursor.getDouble(longtitudeColumnIndex);
-            temp.add(new LatLng(currentLatitude,currentLongtitude));
+            double currentLongitude = cursor.getDouble(longtitudeColumnIndex);
+            temp.add(new LatLng(currentLatitude,currentLongitude));
         }
+        cursor.close();
         return temp;
-
-
 
     }
 

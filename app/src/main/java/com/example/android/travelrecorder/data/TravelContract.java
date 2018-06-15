@@ -14,10 +14,21 @@ public final class TravelContract {
         public final static String TABLE_NAME = "Location_Trace";
 
         public final static String _ID = BaseColumns._ID;
+//        public final static String COLUMN_TRAVEL="travelId";
         public final static String COLUMN_LATITUDE = "latitude";
-        public final static String COLUMN_LONGTITUDE = "longitude";
+        public final static String COLUMN_LONGITUDE = "longitude";
         public final static String COLUMN_TIMESTAMP = "time";
 
 
     }
+    public static final class UsersEntry implements BaseColumns {
+
+        public final static String TABLE_NAME = "USERS";
+
+        public final static String _ID = BaseColumns._ID;
+        public final static String COLUMN_EAMIL="email";
+        public final static String COLUMN_PASSWORD = "password";
+
+    }
+
 }
