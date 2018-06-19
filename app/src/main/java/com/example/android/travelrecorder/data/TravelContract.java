@@ -2,9 +2,7 @@ package com.example.android.travelrecorder.data;
 
 import android.provider.BaseColumns;
 
-/**
- * Created by a123 on 02/06/2018.
- */
+
 
 public final class TravelContract {
     private TravelContract() {}

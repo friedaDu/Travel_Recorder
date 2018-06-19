@@ -1,7 +1,11 @@
 package com.example.android.travelrecorder;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -11,13 +15,18 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MenuInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import com.example.android.travelrecorder.data.TravelContract;
 import com.example.android.travelrecorder.data.TravelDbHelper;
@@ -34,14 +43,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static GoogleMap mMap;
     private  TravelDbHelper mDbHelper=new TravelDbHelper(this);
     LocationManager locationManager;
     private Button btn1, btn2;
+
     private void initView() {
         btn1 = (Button) findViewById(R.id.RestartButton);
+        btn2=(Button)findViewById(R.id.Start);
 
     }
     public void onClick(View v) {
@@ -54,6 +65,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 db.execSQL(sql1);
                 db.execSQL(sql2);
                 break;
+            case R.id.Start:
+                break;
+            case R.id.Stop:
+                break;
         }
     }
     private void insertLocation(LatLng lat) {
@@ -63,32 +78,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         values.put(TravelContract.TravelEntry.COLUMN_LATITUDE,lat.latitude);
         values.put(TravelContract.TravelEntry.COLUMN_LONGITUDE,lat.longitude);
         values.put(TravelContract.TravelEntry.COLUMN_TIMESTAMP,System.currentTimeMillis());
-        long newRowId = db.insert(TravelContract.TravelEntry.TABLE_NAME, null, values);
+
+        long newRowId = db.insertOrThrow(TravelContract.TravelEntry.TABLE_NAME, null, values);
+
         if (newRowId == -1) {
             // If the row ID is -1, then there was an error with insertion.
             Toast.makeText(this, "Error with saving location", Toast.LENGTH_SHORT).show();}
 
     }
-//    private void insertLocation() {
-//        TravelDbHelper  mDbHelper=new TravelDbHelper(this);
-//        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-//        ContentValues values = new ContentValues();
-//        values.put(TravelContract.TravelEntry.COLUMN_LATITUDE,0.1);
-//        values.put(TravelContract.TravelEntry.COLUMN_LONGTITUDE,53);
-//        Log.v("hhhhh",String.valueOf(System.currentTimeMillis()));
-//        values.put(TravelContract.TravelEntry.COLUMN_TIMESTAMP,System.currentTimeMillis());
-//        long newRowId = db.insert(TravelContract.TravelEntry.TABLE_NAME, null, values);
-//        if (newRowId == -1) {
-//            // If the row ID is -1, then there was an error with insertion.
-//            Toast.makeText(this, "Error with saving pet", Toast.LENGTH_SHORT).show();}
-//
-//    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1 && grantResults.length > 0) {
+            boolean grant = grantResults[0] == PackageManager.PERMISSION_GRANTED;//是否授权，可以根据permission作为标记
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initView();
         setContentView(R.layout.activity_maps);
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -97,23 +110,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+            ActivityCompat.requestPermissions(MapsActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+
             return;
         }
         if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, new LocationListener() {
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 10, new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
                     double latitude = location.getLatitude();
                     double longtitude = location.getLongitude();
                     LatLng latLng = new LatLng(latitude, longtitude);
                     Geocoder geocoder = new Geocoder(getApplicationContext());
-//                    insertLocation(latLng);
+                    insertLocation(latLng);
                     try {
                         List<Address> addressList = geocoder.getFromLocation(latitude, longtitude, 1);
                         String str = addressList.get(0).getLocality() + ",";
@@ -142,7 +151,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             });
         } else if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, new LocationListener() {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 20, new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
                     double latitude = location.getLatitude();
@@ -181,6 +190,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
     }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.editor_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 
 
     /**
@@ -204,13 +234,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         PolylineOptions rectOptions = new PolylineOptions()
                 .width(5)
                 .color(Color.BLUE);
-//                .add(new LatLng(37.35, -122.0))
-//                .add(new LatLng(37.45, -122.0))
-//                .add(new LatLng(37.45, -122.2))
-//                .add(new LatLng(37.35, -122.2))
-//                .add(new LatLng(37.35, -122.0));
-
-        // Get back the mutable Polyline
         List<LatLng> points = new ArrayList<>();
 
         points=getAllPoints();

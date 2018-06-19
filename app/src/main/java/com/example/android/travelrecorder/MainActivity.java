@@ -1,6 +1,8 @@
 package com.example.android.travelrecorder;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -40,8 +42,26 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-                startActivity(intent);
+                SharedPreferences preferences = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
+                String userId = preferences.getString("userId", null);
+                String token = preferences.getString("token", null);
+                if (userId.equals(null)) {
+                    Toast.makeText(MainActivity.this,"当前没有学生记录请添加！",Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(MainActivity.this, LoginActivity2.class);
+                    startActivity(intent);
+                }
+                String hashId = BCrypt.hashpw(String.valueOf(userId), BCrypt.gensalt());
+                if (!BCrypt.checkpw(userId, token)) {
+                    Toast.makeText(MainActivity.this,"wrong token",Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(MainActivity.this, LoginActivity2.class);
+                    startActivity(intent);
+                }
+                else {
+                    Toast.makeText(MainActivity.this,"access succeed",Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                    startActivity(intent);
+                }
+
             }
         });
        Button logButton = (Button) findViewById(R.id.logButton);
