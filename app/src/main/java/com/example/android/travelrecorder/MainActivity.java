@@ -1,5 +1,6 @@
 package com.example.android.travelrecorder;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -14,7 +15,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View.OnClickListener;
+
 
 import android.view.Menu;
 import android.view.MenuItem;
@@ -30,6 +31,40 @@ public class MainActivity extends AppCompatActivity
     private TravelDbHelper mDbHelper;
 
 
+    private String hasActiveTravel(String user) {
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+        Cursor cursor=db.rawQuery("SELECT * FROM Travels WHERE userId=? AND status=1", new String[] {user});
+
+        if(cursor.getCount()==0){
+            Toast.makeText(this, "No active travel found.", Toast.LENGTH_SHORT).show();
+
+            return null;
+        }
+        String id=null;
+        if(cursor.moveToNext()){
+
+        int userColumnIndex = cursor.getColumnIndex(TravelContract.LinkEntry.COLUMN_TRAVEL);
+        id=cursor.getString(userColumnIndex);
+        cursor.close();
+
+        }
+        return id;
+
+    }
+
+    private String createTravel(String user){
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+
+        String travelId;
+        travelId=user+"&"+String.valueOf(System.currentTimeMillis());
+        ContentValues values = new ContentValues();
+        values.put(TravelContract.LinkEntry.COLUMN_USER,user);
+        values.put(TravelContract.LinkEntry.COLUMN_TRAVEL,travelId);
+        values.put(TravelContract.LinkEntry.COLUMN_STATUS,1);
+        long newRowId = db.insertOrThrow(TravelContract.LinkEntry.TABLE_NAME, null, values);
+        return travelId;
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +80,7 @@ public class MainActivity extends AppCompatActivity
                 SharedPreferences preferences = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
                 String userId = preferences.getString("userId", null);
                 String token = preferences.getString("token", null);
-                if (userId.equals(null)) {
+                if (userId==null) {
                     Toast.makeText(MainActivity.this,"当前没有学生记录请添加！",Toast.LENGTH_LONG).show();
                     Intent intent = new Intent(MainActivity.this, LoginActivity2.class);
                     startActivity(intent);
@@ -59,9 +94,17 @@ public class MainActivity extends AppCompatActivity
                 else {
                     Toast.makeText(MainActivity.this,"access succeed",Toast.LENGTH_LONG).show();
                     Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                    if(hasActiveTravel(userId)!=null){
+                        String travelId=hasActiveTravel(userId);
+                        intent.putExtra("travelId", travelId);
+
+                    }
+                    else{
+                        String travelId=createTravel(userId);
+                        intent.putExtra("travelId", travelId);
+                    }
                     startActivity(intent);
                 }
-
             }
         });
        Button logButton = (Button) findViewById(R.id.logButton);
@@ -214,8 +257,9 @@ public class MainActivity extends AppCompatActivity
 //    }
 
     private void displayDatabaseInfo() {
-        // Create and/or open a database to read from it
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
+        // Create and/or open a database to read from it
+
 
         // Define a projection that specifies which columns from the database
 //         you will actually use after this query.
@@ -272,4 +316,68 @@ public class MainActivity extends AppCompatActivity
             cursor.close();
         }
     }
+
+//    private void displayDatabaseInfo() {
+//        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+//        // Create and/or open a database to read from it
+//
+//
+//        // Define a projection that specifies which columns from the database
+////         you will actually use after this query.
+//        String[] projection = {
+//                TravelContract.LinkEntry._ID,
+//                TravelContract.LinkEntry.COLUMN_USER,
+//                TravelContract.LinkEntry.COLUMN_TRAVEL,
+//                TravelContract.LinkEntry.COLUMN_STATUS,
+//        };
+//
+//        Cursor cursor = db.query(
+//                TravelContract.LinkEntry.TABLE_NAME,   // The table to query
+//                projection,      // The columns to return
+//                null,                  // The columns for the WHERE clause
+//                null,                  // The values for the WHERE clause
+//                null,                  // Don't group the rows
+//                null,                  // Don't filter by row groups
+//                null);                   // The sort order
+//
+//        TextView displayView = (TextView) findViewById(R.id.main_textview);
+//
+//        try {
+//            // Create a header in the Text View that looks like this:
+//            //
+//            // The pets table contains <number of rows in Cursor> pets.
+//            // _id - name - breed - gender - weight
+//            //
+//            // In the while loop below, iterate through the rows of the cursor and display
+//            // the information from each column in this order.
+//            displayView.setText("The users table contains " + cursor.getCount() + " travels.\n\n");
+////            displayView.append(TravelContract.UsersEntry._ID + " - " +
+////                    TravelContract.UsersEntry.COLUMN_EAMIL + " - " +
+////                    TravelContract.UsersEntry.COLUMN_PASSWORD + "\n");
+////
+////            // Figure out the index of each column
+//            int idColumnIndex = cursor.getColumnIndex(TravelContract.LinkEntry._ID);
+//            int latitudeColumnIndex = cursor.getColumnIndex("userId");
+//            int longtitudeColumnIndex = cursor.getColumnIndex("travelId");
+//            int statusCol=cursor.getColumnIndex("status");
+////
+////            // Iterate through all the returned rows in the cursor
+//            while (cursor.moveToNext()) {
+//                // Use that index to extract the String or Int value of the word
+//                // at the current row the cursor is on.
+//                int currentID = cursor.getInt(idColumnIndex);
+//                String currentLatitude = cursor.getString(latitudeColumnIndex);
+//                String currentLongtitude = cursor.getString(longtitudeColumnIndex);
+//                int status=cursor.getInt(statusCol);
+//                // Display the values from each column of the current row in the cursor in the TextView
+//                displayView.append(("\n" + currentID + " - " +
+//                        currentLatitude + " - " +
+//                        currentLongtitude+" - "+status));
+//            }
+//        } finally {
+//            // Always close the cursor when you're done reading from it. This releases all its
+//            // resources and makes it invalid.
+//            cursor.close();
+//        }
+//    }
 }

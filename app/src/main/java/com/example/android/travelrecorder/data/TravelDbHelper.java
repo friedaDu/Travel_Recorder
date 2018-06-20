@@ -20,12 +20,17 @@ public class TravelDbHelper extends SQLiteOpenHelper {
                 + TravelEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + TravelEntry.COLUMN_LATITUDE + " DOUBLE, "
                  + TravelEntry.COLUMN_LONGITUDE+" DOUBLE, "
+                +TravelEntry.COLUMN_TRAVEL+" TEXT, "
                 + TravelEntry.COLUMN_TIMESTAMP + " INTEGER NOT NULL);";
+
 
         db.execSQL(SQL_CREATE_LOCATIONS_TABLE);
 
-        String SQL_CREATE_USERS_TABLE="CREATE TABLE USERS ("+ TravelContract.UsersEntry._ID+ " INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, password TEXT NOT NULL); ";
-        db.execSQL(SQL_CREATE_USERS_TABLE);
+        String SQL_CREATE_USERS_TABLE2="CREATE TABLE USERS ("+ TravelContract.UsersEntry._ID+ " INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, password TEXT NOT NULL); ";
+        db.execSQL(SQL_CREATE_USERS_TABLE2);
+        String SQL_CREATE_USERS_TABLE3="CREATE TABLE Travels ("+ TravelContract.LinkEntry._ID+ " INTEGER PRIMARY KEY AUTOINCREMENT, userId TEXT NOT NULL, travelId TEXT NOT NULL, status INTEGER); ";
+        db.execSQL(SQL_CREATE_USERS_TABLE3);
+
     }
 
     @Override
