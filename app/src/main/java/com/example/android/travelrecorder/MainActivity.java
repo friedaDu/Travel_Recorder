@@ -1,5 +1,7 @@
 package com.example.android.travelrecorder;
 
+
+import android.content.ClipData;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -16,6 +18,10 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
+import com.microsoft.windowsazure.mobileservices.*;
+
+
+
 
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,10 +31,17 @@ import android.widget.Toast;
 
 import com.example.android.travelrecorder.data.TravelContract;
 import com.example.android.travelrecorder.data.TravelDbHelper;
+import com.microsoft.windowsazure.mobileservices.http.ServiceFilterResponse;
+import com.microsoft.windowsazure.mobileservices.table.TableOperationCallback;
+
+import java.net.MalformedURLException;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     private TravelDbHelper mDbHelper;
+    private MobileServiceClient mClient;
+
+
 
 
     private String hasActiveTravel(String user) {
@@ -66,45 +79,62 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    public void startNewIntent(){
+        SharedPreferences preferences = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
+        String userId = preferences.getString("userId", null);
+        String token = preferences.getString("token", null);
+        if (userId==null) {
+            Toast.makeText(MainActivity.this,"Please log in or register to begin recording",Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(MainActivity.this, LoginActivity2.class);
+            startActivity(intent);
+            return;
+        }
+//            String hashId = BCrypt.hashpw(String.valueOf(userId), BCrypt.gensalt());
+        if(!BCrypt.checkpw(userId, token)) {
+            Toast.makeText(MainActivity.this,"wrong token",Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(MainActivity.this, LoginActivity2.class);
+            startActivity(intent);
+            return;
+        }
+        else if(BCrypt.checkpw(userId, token)) {
+            Toast.makeText(MainActivity.this,"access succeed",Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+            if(hasActiveTravel(userId)!=null){
+                String travelId=hasActiveTravel(userId);
+                intent.putExtra("travelId", travelId);
+
+            }
+            else{
+                String travelId=createTravel(userId);
+                intent.putExtra("travelId", travelId);
+            }
+            startActivity(intent);
+        }
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        try{mClient = new MobileServiceClient(
+                "https://travelrecorder.azurewebsites.net",
+                this
+        );
+        } catch (MalformedURLException e){
+            createAndShowDialog(new Exception("There was an error creating the Mobile Service. Verify the URL"), "Error");
+
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SharedPreferences preferences = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
-                String userId = preferences.getString("userId", null);
-                String token = preferences.getString("token", null);
-                if (userId==null) {
-                    Toast.makeText(MainActivity.this,"当前没有学生记录请添加！",Toast.LENGTH_LONG).show();
-                    Intent intent = new Intent(MainActivity.this, LoginActivity2.class);
-                    startActivity(intent);
-                }
-                String hashId = BCrypt.hashpw(String.valueOf(userId), BCrypt.gensalt());
-                if (!BCrypt.checkpw(userId, token)) {
-                    Toast.makeText(MainActivity.this,"wrong token",Toast.LENGTH_LONG).show();
-                    Intent intent = new Intent(MainActivity.this, LoginActivity2.class);
-                    startActivity(intent);
-                }
-                else {
-                    Toast.makeText(MainActivity.this,"access succeed",Toast.LENGTH_LONG).show();
-                    Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-                    if(hasActiveTravel(userId)!=null){
-                        String travelId=hasActiveTravel(userId);
-                        intent.putExtra("travelId", travelId);
-
-                    }
-                    else{
-                        String travelId=createTravel(userId);
-                        intent.putExtra("travelId", travelId);
-                    }
-                    startActivity(intent);
-                }
+               startNewIntent();
             }
         });
        Button logButton = (Button) findViewById(R.id.logButton);
@@ -256,6 +286,12 @@ public class MainActivity extends AppCompatActivity
 //        }
 //    }
 
+    private void createAndShowDialog(Exception exception, String title) {
+        Throwable ex = exception;
+        if(exception.getCause() != null){
+            ex = exception.getCause();
+        }
+    }
     private void displayDatabaseInfo() {
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
         // Create and/or open a database to read from it

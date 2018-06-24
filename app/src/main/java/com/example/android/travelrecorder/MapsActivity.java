@@ -1,11 +1,8 @@
 package com.example.android.travelrecorder;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -17,17 +14,17 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.view.MenuInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.view.Menu;
 import android.view.MenuItem;
+
 
 import com.example.android.travelrecorder.data.TravelContract;
 import com.example.android.travelrecorder.data.TravelDbHelper;
@@ -40,6 +37,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,14 +47,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static GoogleMap mMap;
     private  TravelDbHelper mDbHelper=new TravelDbHelper(this);
     private String travelId=null;
+    private LocationListener mLocationListener;
+//    private MobileServiceClient mClient;
+//
+//    MobileServiceTable<locations> locTable= mClient.getTable(locations.class);
+
 
 
     LocationManager locationManager;
     private Button btn1, btn2;
+    private Switch btn3;
 
     private void initView() {
         btn1 = (Button) findViewById(R.id.RestartButton);
         btn2=(Button)findViewById(R.id.Start);
+        btn3=(Switch)findViewById(R.id.trackSwitch);
 
     }
 
@@ -74,10 +79,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 db.execSQL(sql2);
                 break;
             case R.id.Start:
+                startDetect();
+                Toast.makeText(this, "Tracking Mode On", Toast.LENGTH_SHORT).show();
                 break;
-            case R.id.Stop:
-                break;
+
         }
+    }
+
+
+    private void showCurrentRoute(){
+
     }
     private void insertLocation(LatLng lat,String travelId) {
         TravelDbHelper  mDbHelper=new TravelDbHelper(this);
@@ -95,6 +106,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Toast.makeText(this, "Error with saving location", Toast.LENGTH_SHORT).show();}
 
     }
+//    private void insert(LatLng lat,String travelId){
+//        final locations mlocation=new locations(lat,travelId);
+//        new AsyncTask<Void, Void, Void>() {
+//
+//            @Override
+//            protected Void doInBackground(Void... params) {
+//                try {
+//                    locTable.insert(mlocation).get();
+//                        runOnUiThread(new Runnable() {
+//                            public void run() {
+////                                mAdapter.add(item);
+//                            }
+//                        });
+//                } catch (Exception exception) {
+//                    exception.printStackTrace();
+//
+//                }
+//                return null;
+//            }
+//        }.execute();
+//    }
 
 
     @Override
@@ -105,23 +137,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        initView();
-        setContentView(R.layout.activity_maps);
-        TextView textView=(TextView) this.findViewById(R.id.trip_id);
-        Intent intent=getIntent();
-        final String travelId=intent.getStringExtra("travelId");
-        setTravelId(travelId);
-
-        textView.setText(travelId);
-
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
+    protected void startDetect(){
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -130,21 +146,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             return;
         }
         if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 10, new LocationListener() {
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 10, mLocationListener=new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
                     double latitude = location.getLatitude();
                     double longtitude = location.getLongitude();
                     LatLng latLng = new LatLng(latitude, longtitude);
                     Geocoder geocoder = new Geocoder(getApplicationContext());
+                    addPath(mMap,travelId);
                     insertLocation(latLng,travelId);
+//                    insert(latLng,travelId);
                     try {
+
+                        insertLocation(latLng,travelId);
                         List<Address> addressList = geocoder.getFromLocation(latitude, longtitude, 1);
                         String str = addressList.get(0).getLocality() + ",";
                         str += addressList.get(0).getCountryName();
-//                        mMap.addMarker(new MarkerOptions().position(latLng).title(str));
+                        mMap.addMarker(new MarkerOptions().position(latLng).title(str));
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 10.2f));
-//                        insertLocation(latLng);
+
                     } catch (IOException E) {
                         E.printStackTrace();
                     }
@@ -166,7 +186,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
         } else if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 20, new LocationListener() {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 20, mLocationListener=new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
                     double latitude = location.getLatitude();
@@ -175,6 +195,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     addPath(mMap,travelId);
                     Geocoder geocoder = new Geocoder(getApplicationContext());
                     insertLocation(latLng,travelId);
+//                    insert(latLng,travelId);
                     try {
                         List<Address> addressList = geocoder.getFromLocation(latitude, longtitude, 1);
                         String str = addressList.get(0).getLocality() + ",";
@@ -201,10 +222,50 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 public void onProviderDisabled(String provider) {
 
                 }
+
             });
         }
 
+
     }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initView();
+        setContentView(R.layout.activity_maps);
+        TextView textView=(TextView) this.findViewById(R.id.trip_id);
+        Intent intent=getIntent();
+        final String travelId=intent.getStringExtra("travelId");
+        setTravelId(travelId);
+
+        textView.setText(travelId);
+
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+//        addPath(mMap,travelId);
+        btn3=(Switch) findViewById(R.id.trackSwitch);
+        btn3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked) {
+                    startDetect();
+                }
+                else {
+                    locationManager.removeUpdates(mLocationListener);
+                    if(mLocationListener!=null){
+                        mLocationListener=null;
+                    }
+                    if(locationManager!=null){
+                        locationManager=null;
+                    }
+                }
+            }
+        });
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -212,7 +273,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return true;
     }
 
-//    @Override
+    //    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -268,7 +329,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Polyline polyline = map.addPolyline(rectOptions);
         }
 
-//        polyline.setPoints(points);
     }
     public List<LatLng> getAllPoints(String travelId) {
         String sql = "select * from Location_Trace WHERE travelId=?";
