@@ -27,6 +27,7 @@
         android:id="@+id/Start"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        style="@style/Widget.AppCompat.Button"
         android:onClick="onClick"
         android:text="Start Tracking" />
         <Button
@@ -37,11 +38,21 @@
             android:text="Stop Tracking" />
     </LinearLayout>
 
+    <Switch
+        android:id="@+id/trackSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:showText="true"
+        android:textOff="@string/switch_off"
+        android:textOn="@string/swtich_on"/>
+        <!--android:thumb="@drawable/switch_btn"/>-->
     <TextView
         android:id="@+id/trip_id"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="" />
+
+
 
 </LinearLayout>
 

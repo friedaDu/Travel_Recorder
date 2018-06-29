@@ -8,8 +8,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -32,52 +34,107 @@ import android.widget.Toast;
 import com.example.android.travelrecorder.data.TravelContract;
 import com.example.android.travelrecorder.data.TravelDbHelper;
 import com.microsoft.windowsazure.mobileservices.http.ServiceFilterResponse;
+import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 import com.microsoft.windowsazure.mobileservices.table.TableOperationCallback;
 
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     private TravelDbHelper mDbHelper;
     private MobileServiceClient mClient;
+    private MobileServiceTable<travels> travelTable;
 
 
+//    private String hasActiveTravel(String user) {
+//        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+//        Cursor cursor=db.rawQuery("SELECT * FROM Travels WHERE userId=? AND status=1", new String[] {user});
+//
+//        if(cursor.getCount()==0){
+//            Toast.makeText(this, "No active travel found.", Toast.LENGTH_SHORT).show();
+//
+//            return null;
+//        }
+//        String id=null;
+//        if(cursor.moveToNext()){
+//
+//            int userColumnIndex = cursor.getColumnIndex(TravelContract.LinkEntry.COLUMN_TRAVEL);
+//            id=cursor.getString(userColumnIndex);
+//            cursor.close();
+//
+//        }
+//        return id;
+//    }
 
+    private String hasActiveTravel(final String user){
+        final List<String> travels = new ArrayList<>();
+        final Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+        final AsyncTask<Void, Void, Void> execute = new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    final MobileServiceList<travels> result = travelTable.where().field("status").eq(1).and().field("userId").eq(user).execute().get();
 
-    private String hasActiveTravel(String user) {
-        SQLiteDatabase db = mDbHelper.getReadableDatabase();
-        Cursor cursor=db.rawQuery("SELECT * FROM Travels WHERE userId=? AND status=1", new String[] {user});
-
-        if(cursor.getCount()==0){
-            Toast.makeText(this, "No active travel found.", Toast.LENGTH_SHORT).show();
-
-            return null;
-        }
-        String id=null;
-        if(cursor.moveToNext()){
-
-        int userColumnIndex = cursor.getColumnIndex(TravelContract.LinkEntry.COLUMN_TRAVEL);
-        id=cursor.getString(userColumnIndex);
-        cursor.close();
-
-        }
-        return id;
-
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (result.isEmpty()) {
+                                        String travelId =createTravel(user);
+                                        intent.putExtra("travelId", travelId);
+                                        startActivity(intent);
+                                        return;
+                                    }
+                                    travels.add(result.get(0).getTravelId());
+                                    intent.putExtra("travelId", travels.get(0));
+                                    startActivity(intent);
+                                }
+                            });
+                        }
+                    });
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+                return null;
+            }
+        }.execute();
+        return "Please Waiting";
     }
+
 
     private String createTravel(String user){
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-
         String travelId;
         travelId=user+"&"+String.valueOf(System.currentTimeMillis());
-        ContentValues values = new ContentValues();
-        values.put(TravelContract.LinkEntry.COLUMN_USER,user);
-        values.put(TravelContract.LinkEntry.COLUMN_TRAVEL,travelId);
-        values.put(TravelContract.LinkEntry.COLUMN_STATUS,1);
-        long newRowId = db.insertOrThrow(TravelContract.LinkEntry.TABLE_NAME, null, values);
-        return travelId;
+        final travels mtravel =new  travels(user,travelId);
+        new AsyncTask<Void, Void, Void>() {
 
-    }
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    travelTable.insert(mtravel).get();
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+
+//
+                        }
+                    });
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+
+                }
+                return null;
+            }
+        }.execute();
+        return travelId;}
+
+
+
+
 
     public void startNewIntent(){
         SharedPreferences preferences = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
@@ -99,16 +156,19 @@ public class MainActivity extends AppCompatActivity
         else if(BCrypt.checkpw(userId, token)) {
             Toast.makeText(MainActivity.this,"access succeed",Toast.LENGTH_LONG).show();
             Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-            if(hasActiveTravel(userId)!=null){
-                String travelId=hasActiveTravel(userId);
-                intent.putExtra("travelId", travelId);
+            hasActiveTravel(userId);
 
-            }
-            else{
-                String travelId=createTravel(userId);
-                intent.putExtra("travelId", travelId);
-            }
-            startActivity(intent);
+
+//            if(hasActiveTravel(userId)!=null){
+//                String travelId=hasActiveTravel(userId);
+//                intent.putExtra("travelId", travelId);
+//
+//            }
+//            else{
+//                String travelId=createTravel(userId);
+//                intent.putExtra("travelId", travelId);
+//            }
+//            startActivity(intent);
         }
 
     }
@@ -120,6 +180,7 @@ public class MainActivity extends AppCompatActivity
                 "https://travelrecorder.azurewebsites.net",
                 this
         );
+            travelTable=mClient.getTable(travels.class);
         } catch (MalformedURLException e){
             createAndShowDialog(new Exception("There was an error creating the Mobile Service. Verify the URL"), "Error");
 
@@ -134,10 +195,10 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-               startNewIntent();
+                startNewIntent();
             }
         });
-       Button logButton = (Button) findViewById(R.id.logButton);
+        Button logButton = (Button) findViewById(R.id.logButton);
         logButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

@@ -8,7 +8,6 @@
          location permissions for the 'MyLocation' functionality. 
     -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    -
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
 
@@ -54,11 +53,15 @@
             android:label="@string/title_activity_add_travel"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".LoginActivity"
-            android:label="@string/title_activity_login" />
-        <activity
             android:name=".LoginActivity2"
-            android:label="@string/title_activity_login2"></activity>
+            android:label="@string/title_activity_login2" />
+        <activity android:name=".ImageActivity" />
+        <activity
+            android:name=".ImageManager"
+            android:label="@string/title_activity_image_manager"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity android:name=".add_imagesActivity" />
+        <activity android:name=".ListImagesActivity"></activity>
     </application>
 
 </manifest>

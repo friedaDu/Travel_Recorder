@@ -12,6 +12,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
@@ -36,9 +37,13 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
+import com.microsoft.windowsazure.mobileservices.MobileServiceList;
+import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,9 +53,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private  TravelDbHelper mDbHelper=new TravelDbHelper(this);
     private String travelId=null;
     private LocationListener mLocationListener;
-//    private MobileServiceClient mClient;
+    private MobileServiceClient mClient;
 //
-//    MobileServiceTable<locations> locTable= mClient.getTable(locations.class);
+    private MobileServiceTable<locations> locTable;
+    private MobileServiceTable<travels> travelTable;
+
 
 
 
@@ -89,6 +96,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void showCurrentRoute(){
 
+
     }
     private void insertLocation(LatLng lat,String travelId) {
         TravelDbHelper  mDbHelper=new TravelDbHelper(this);
@@ -106,27 +114,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Toast.makeText(this, "Error with saving location", Toast.LENGTH_SHORT).show();}
 
     }
-//    private void insert(LatLng lat,String travelId){
-//        final locations mlocation=new locations(lat,travelId);
-//        new AsyncTask<Void, Void, Void>() {
-//
-//            @Override
-//            protected Void doInBackground(Void... params) {
-//                try {
-//                    locTable.insert(mlocation).get();
-//                        runOnUiThread(new Runnable() {
-//                            public void run() {
-////                                mAdapter.add(item);
-//                            }
-//                        });
-//                } catch (Exception exception) {
-//                    exception.printStackTrace();
-//
-//                }
-//                return null;
-//            }
-//        }.execute();
-//    }
+    private void insert(LatLng lat,String travelId){
+        final locations mlocation=new locations(lat,travelId);
+        new AsyncTask<Void, Void, Void>() {
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    locTable.insert(mlocation).get();
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+//                                mAdapter.add(item);
+                            }
+                        });
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+
+                }
+                return null;
+            }
+        }.execute();
+    }
 
 
     @Override
@@ -149,13 +157,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 10, mLocationListener=new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
+
                     double latitude = location.getLatitude();
                     double longtitude = location.getLongitude();
                     LatLng latLng = new LatLng(latitude, longtitude);
                     Geocoder geocoder = new Geocoder(getApplicationContext());
                     addPath(mMap,travelId);
                     insertLocation(latLng,travelId);
-//                    insert(latLng,travelId);
+                    insert(latLng,travelId);
                     try {
 
                         insertLocation(latLng,travelId);
@@ -195,7 +204,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     addPath(mMap,travelId);
                     Geocoder geocoder = new Geocoder(getApplicationContext());
                     insertLocation(latLng,travelId);
-//                    insert(latLng,travelId);
+                    insert(latLng,travelId);
                     try {
                         List<Address> addressList = geocoder.getFromLocation(latitude, longtitude, 1);
                         String str = addressList.get(0).getLocality() + ",";
@@ -232,6 +241,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try{mClient = new MobileServiceClient(
+                "https://travelrecorder.azurewebsites.net",
+                this
+        );
+            locTable=mClient.getTable(locations.class);
+            travelTable=mClient.getTable(travels.class);
+        } catch (MalformedURLException e){
+            e.printStackTrace();
+
+        }
         initView();
         setContentView(R.layout.activity_maps);
         TextView textView=(TextView) this.findViewById(R.id.trip_id);
@@ -282,14 +301,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.Finish) {
-            SQLiteDatabase db=mDbHelper.getWritableDatabase();
-
-            ContentValues values = new ContentValues();
-            values.put("status", 0);
-
-            db.update("Travels",values,"travelId=?",new String[] { travelId });
-
+//            SQLiteDatabase db=mDbHelper.getWritableDatabase();
+//
+//            ContentValues values = new ContentValues();
+//            values.put("status", 0);
+//
+//            db.update("Travels",values,"travelId=?",new String[] { travelId });
+//
             Toast.makeText(this, "This Trip has been finished", Toast.LENGTH_SHORT).show();
+            finishTravel();
             Intent intent = new Intent(MapsActivity.this, MainActivity.class);
             startActivity(intent);
             return true;
@@ -344,6 +364,32 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         cursor.close();
         return temp;
+
+    }
+    public void finishTravel(){
+        final List<travels> travelsList = new ArrayList<>();
+
+        new AsyncTask<Void, Void, Void>() {
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    final MobileServiceList<travels> result =travelTable.where().field("travelId").eq(travelId).execute().get();
+                    result.get(0).setStatus(0);
+                    travelTable.update(result.get(0)).get();
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+
+//
+                        }
+                    });
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+
+                }
+                return null;
+            }
+        }.execute();
 
     }
 

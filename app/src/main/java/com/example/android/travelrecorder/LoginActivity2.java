@@ -2,6 +2,7 @@ package com.example.android.travelrecorder;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentValues;
 import android.content.Context;
@@ -24,6 +25,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -40,7 +42,12 @@ import android.content.SharedPreferences;
 
 import com.example.android.travelrecorder.data.TravelContract;
 import com.example.android.travelrecorder.data.TravelDbHelper;
+import com.google.common.collect.Table;
+import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
+import com.microsoft.windowsazure.mobileservices.MobileServiceList;
+import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,6 +60,7 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
     SharedPreferences sharedPreferences;
 
     SharedPreferences.Editor editor;
+    private String userId=null;
 
     /**
      * Id to identity READ_CONTACTS permission request.
@@ -73,11 +81,21 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    private MobileServiceClient mClient;
+
+    private MobileServiceTable<users> userTable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        try{mClient = new MobileServiceClient(
+                "https://travelrecorder.azurewebsites.net",
+                this
+        );
+            userTable=mClient.getTable(users.class);
+        } catch (MalformedURLException e){
+            e.printStackTrace();}
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
@@ -155,6 +173,10 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
      * If there are form errors (invalid email, missing fields, etc.), the
      * errors are presented and no actual login attempt is made.
      */
+    public void setUserId(String id){
+        userId=id;
+    }
+
     private void attemptLogin() {
         if (mAuthTask != null) {
             return;
@@ -337,6 +359,25 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
         cursor.close();
         return tempStr;
     }
+    @SuppressLint("StaticFieldLeak")
+    private List<String>  getUser(){
+        final List<String> tempStr=new ArrayList<String>();
+                try {
+                    final MobileServiceList<users> result =userTable.select("id","email","password").execute().get();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            for (users item : result) {
+                                tempStr.add(item.getId()+":"+item.getEmail()+":"+item.getPassword());
+                            }
+                        }
+                    });
+                } catch (Exception exception) {
+//                    createAndShowDialog(exception, "Error");
+                }
+
+        return tempStr;
+    }
 
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
@@ -358,7 +399,7 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
             } catch (InterruptedException e) {
                 return false;
             }
-            for (String credential : getUsersInfo()) {
+            for (String credential : getUser()) {
                 String[] pieces = credential.split(":");
                 if (pieces[1].equals(mEmail)) {
                     // Account exists, return true if the password matches.
@@ -369,20 +410,16 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
                         editor.putString("userId", (pieces[0]));
                         editor.putString("token",hashId);
                         editor.apply();
-                    }
+                        return true;
+
+                }
                     return BCrypt.checkpw(mPassword, pieces[2]);
                 }
             }
             // TODO: register the new account here.
             String hashPassword = BCrypt.hashpw(mPassword, BCrypt.gensalt());
-            long myuserid=insertUsers(mEmail,hashPassword);
+            insert(mEmail,hashPassword);
 
-            SharedPreferences sharedPreferences = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
-            editor=sharedPreferences.edit();
-            String hashId = BCrypt.hashpw(String.valueOf(myuserid), BCrypt.gensalt());
-            editor.putString("userId", (String.valueOf(myuserid)));
-            editor.putString("token",hashId);
-            editor.apply();
 
             return true;
         }
@@ -405,6 +442,33 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
             mAuthTask = null;
             showProgress(false);
         }
+    }
+    private boolean insert(String email,String hashedpass) {
+        final users muser=new users(email,hashedpass);
+        final List<String> ids = new ArrayList<>();
+        try {
+                    userTable.insert(muser).get();
+                    final MobileServiceList<users> result =userTable.where().field("email").eq(email).select("id").execute().get();
+                    ids.add(result.get(0).getId());
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            setUserId(ids.get(0));
+                            SharedPreferences sharedPreferences = getSharedPreferences("userInfo", Context.MODE_PRIVATE);
+                            editor=sharedPreferences.edit();
+                            String hashId = BCrypt.hashpw(userId, BCrypt.gensalt());
+                            editor.putString("userId", userId);
+                            editor.putString("token",hashId);
+                            editor.apply();
+                        }
+                    });
+
+                } catch (Exception exception) {
+
+                    exception.printStackTrace();
+
+                }
+                return true;
     }
 }
 

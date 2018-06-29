@@ -34,6 +34,8 @@ import android.widget.Toast;
 
 import com.example.android.travelrecorder.data.TravelContract;
 import com.example.android.travelrecorder.data.TravelDbHelper;
+import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
+import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -69,6 +71,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
