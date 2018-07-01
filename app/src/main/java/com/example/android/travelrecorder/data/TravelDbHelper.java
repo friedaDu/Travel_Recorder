@@ -37,4 +37,31 @@ public class TravelDbHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
     }
+
+    /**
+     * Created by a123 on 24/06/2018.
+     */
+
+    public static class users {
+        @com.google.gson.annotations.SerializedName("id")
+        private String mId;
+        private String email;
+        private String password;
+        public users(String memail,String hasdpass){
+            email=memail;
+            password=hasdpass;
+        }
+        public String getId(){
+            return mId;
+        }
+
+        public String getEmail(){
+            return email;
+        }
+        public String getPassword(){
+            return password;
+        }
+
+
+    }
 }

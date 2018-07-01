@@ -1,5 +1,4 @@
 package com.example.android.travelrecorder;
-
 /**
  * Created by a123 on 24/06/2018.
  */

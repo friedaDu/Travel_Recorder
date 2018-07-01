@@ -6,7 +6,6 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
@@ -25,7 +24,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -37,12 +35,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-
 import com.example.android.travelrecorder.data.TravelContract;
 import com.example.android.travelrecorder.data.TravelDbHelper;
-import com.google.common.collect.Table;
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient;
 import com.microsoft.windowsazure.mobileservices.MobileServiceList;
 import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
@@ -83,7 +77,7 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
     private View mLoginFormView;
     private MobileServiceClient mClient;
 
-    private MobileServiceTable<users> userTable;
+    private MobileServiceTable<TravelDbHelper.users> userTable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,7 +87,7 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
                 "https://travelrecorder.azurewebsites.net",
                 this
         );
-            userTable=mClient.getTable(users.class);
+            userTable=mClient.getTable(TravelDbHelper.users.class);
         } catch (MalformedURLException e){
             e.printStackTrace();}
         // Set up the login form.
@@ -363,11 +357,11 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
     private List<String>  getUser(){
         final List<String> tempStr=new ArrayList<String>();
                 try {
-                    final MobileServiceList<users> result =userTable.select("id","email","password").execute().get();
+                    final MobileServiceList<TravelDbHelper.users> result =userTable.select("id","email","password").execute().get();
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            for (users item : result) {
+                            for (TravelDbHelper.users item : result) {
                                 tempStr.add(item.getId()+":"+item.getEmail()+":"+item.getPassword());
                             }
                         }
@@ -444,11 +438,11 @@ public class LoginActivity2 extends AppCompatActivity implements LoaderCallbacks
         }
     }
     private boolean insert(String email,String hashedpass) {
-        final users muser=new users(email,hashedpass);
+        final TravelDbHelper.users muser=new TravelDbHelper.users(email,hashedpass);
         final List<String> ids = new ArrayList<>();
         try {
                     userTable.insert(muser).get();
-                    final MobileServiceList<users> result =userTable.where().field("email").eq(email).select("id").execute().get();
+                    final MobileServiceList<TravelDbHelper.users> result =userTable.where().field("email").eq(email).select("id").execute().get();
                     ids.add(result.get(0).getId());
                     runOnUiThread(new Runnable() {
                         @Override

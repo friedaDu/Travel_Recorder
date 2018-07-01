@@ -1,5 +1,9 @@
 package com.example.android.travelrecorder;
 
+/**
+ * Created by a123 on 30/06/2018.
+ */
+
 import com.google.android.gms.maps.model.LatLng;
 
 public class locations {

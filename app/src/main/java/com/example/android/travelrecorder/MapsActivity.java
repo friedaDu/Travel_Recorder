@@ -33,7 +33,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -55,20 +57,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LocationListener mLocationListener;
     private MobileServiceClient mClient;
 //
-    private MobileServiceTable<locations> locTable;
-    private MobileServiceTable<travels> travelTable;
-
-
+    private MobileServiceTable<ImageActivity.locations> locTable;
+    private MobileServiceTable<ListImagesActivity.travels> travelTable;
 
 
     LocationManager locationManager;
-    private Button btn1, btn2;
+    private Button btn1, btn2,addPhoto,addText;
     private Switch btn3;
 
     private void initView() {
         btn1 = (Button) findViewById(R.id.RestartButton);
         btn2=(Button)findViewById(R.id.Start);
         btn3=(Switch)findViewById(R.id.trackSwitch);
+        addPhoto=(Button)findViewById(R.id.addPhoto);
+        addText=(Button)findViewById(R.id.addText);
+
 
     }
 
@@ -89,6 +92,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 startDetect();
                 Toast.makeText(this, "Tracking Mode On", Toast.LENGTH_SHORT).show();
                 break;
+
 
         }
     }
@@ -115,7 +119,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
     private void insert(LatLng lat,String travelId){
-        final locations mlocation=new locations(lat,travelId);
+        final ImageActivity.locations mlocation=new ImageActivity.locations(lat,travelId);
         new AsyncTask<Void, Void, Void>() {
 
             @Override
@@ -219,17 +223,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 @Override
                 public void onStatusChanged(String provider, int status, Bundle extras) {
-
                 }
 
                 @Override
                 public void onProviderEnabled(String provider) {
-
                 }
 
                 @Override
                 public void onProviderDisabled(String provider) {
-
                 }
 
             });
@@ -245,19 +246,36 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 "https://travelrecorder.azurewebsites.net",
                 this
         );
-            locTable=mClient.getTable(locations.class);
-            travelTable=mClient.getTable(travels.class);
+            locTable=mClient.getTable(ImageActivity.locations.class);
+            travelTable=mClient.getTable(ListImagesActivity.travels.class);
         } catch (MalformedURLException e){
             e.printStackTrace();
 
         }
         initView();
         setContentView(R.layout.activity_maps);
+        Button addPhotoButton = (Button) findViewById(R.id.addPhoto);
+        addPhotoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MapsActivity.this, add_imagesActivity.class);
+                startActivity(intent);
+            }
+        });
+        Button addTextButton = (Button) findViewById(R.id.addText);
+
+        addTextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MapsActivity.this, AddTextActivity.class);
+                startActivity(intent);
+            }
+        });
+
         TextView textView=(TextView) this.findViewById(R.id.trip_id);
         Intent intent=getIntent();
         final String travelId=intent.getStringExtra("travelId");
         setTravelId(travelId);
-
         textView.setText(travelId);
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -271,13 +289,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(isChecked) {
                     startDetect();
+                    Toast.makeText(getApplicationContext(), "Start Tracking", Toast.LENGTH_SHORT).show();
                 }
                 else {
-                    locationManager.removeUpdates(mLocationListener);
-                    if(mLocationListener!=null){
-                        mLocationListener=null;
-                    }
+                    Toast.makeText(getApplicationContext(), "Stop Tracking", Toast.LENGTH_SHORT).show();
+//                    if(mLocationListener!=null){
+//                        mLocationListener=null;
+//                    }
                     if(locationManager!=null){
+                        locationManager.removeUpdates(mLocationListener);
                         locationManager=null;
                     }
                 }
@@ -332,6 +352,29 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        LatLng snowqualmie = new LatLng(51.3, -1.75);
+
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(snowqualmie)
+                .title("Snowqualmie Falls")
+                .snippet("Snoqualmie Falls is located 25 miles east of Seattle.")
+                .icon(BitmapDescriptorFactory.defaultMarker( BitmapDescriptorFactory.HUE_BLUE));
+
+        InfoWindowData info = new InfoWindowData();
+//        info.setImage("snowqualmie");
+        info.setHotel("Hotel : excellent hotels available");
+        info.setFood("Food : all types of restaurants available");
+        info.setTransport("Reach the site by bus, car and train.");
+
+        CustomInfoWindowGoogleMap customInfoWindow = new CustomInfoWindowGoogleMap(this);
+        mMap.setInfoWindowAdapter(customInfoWindow);
+
+        Marker m = mMap.addMarker(markerOptions);
+        m.setTag(info);
+        m.showInfoWindow();
+
+//        mMap.moveCamera(CameraUpdateFactory.newLatLng(snowqualmie));
+
     }
 
     public void addPath(GoogleMap map,String travelId) {
@@ -367,14 +410,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
     public void finishTravel(){
-        final List<travels> travelsList = new ArrayList<>();
+        final List<ListImagesActivity.travels> travelsList = new ArrayList<>();
 
         new AsyncTask<Void, Void, Void>() {
 
             @Override
             protected Void doInBackground(Void... params) {
                 try {
-                    final MobileServiceList<travels> result =travelTable.where().field("travelId").eq(travelId).execute().get();
+                    final MobileServiceList<ListImagesActivity.travels> result =travelTable.where().field("travelId").eq(travelId).execute().get();
                     result.get(0).setStatus(0);
                     travelTable.update(result.get(0)).get();
                     runOnUiThread(new Runnable() {

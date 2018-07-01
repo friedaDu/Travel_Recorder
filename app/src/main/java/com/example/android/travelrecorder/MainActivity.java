@@ -1,8 +1,6 @@
 package com.example.android.travelrecorder;
 
 
-import android.content.ClipData;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,7 +9,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -33,20 +30,17 @@ import android.widget.Toast;
 
 import com.example.android.travelrecorder.data.TravelContract;
 import com.example.android.travelrecorder.data.TravelDbHelper;
-import com.microsoft.windowsazure.mobileservices.http.ServiceFilterResponse;
 import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable;
-import com.microsoft.windowsazure.mobileservices.table.TableOperationCallback;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadPoolExecutor;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     private TravelDbHelper mDbHelper;
     private MobileServiceClient mClient;
-    private MobileServiceTable<travels> travelTable;
+    private MobileServiceTable<ListImagesActivity.travels> travelTable;
 
 
 //    private String hasActiveTravel(String user) {
@@ -76,7 +70,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             protected Void doInBackground(Void... params) {
                 try {
-                    final MobileServiceList<travels> result = travelTable.where().field("status").eq(1).and().field("userId").eq(user).execute().get();
+                    final MobileServiceList<ListImagesActivity.travels> result = travelTable.where().field("status").eq(1).and().field("userId").eq(user).execute().get();
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -110,7 +104,7 @@ public class MainActivity extends AppCompatActivity
     private String createTravel(String user){
         String travelId;
         travelId=user+"&"+String.valueOf(System.currentTimeMillis());
-        final travels mtravel =new  travels(user,travelId);
+        final ListImagesActivity.travels mtravel =new ListImagesActivity.travels(user,travelId);
         new AsyncTask<Void, Void, Void>() {
 
             @Override
@@ -180,7 +174,7 @@ public class MainActivity extends AppCompatActivity
                 "https://travelrecorder.azurewebsites.net",
                 this
         );
-            travelTable=mClient.getTable(travels.class);
+            travelTable=mClient.getTable(ListImagesActivity.travels.class);
         } catch (MalformedURLException e){
             createAndShowDialog(new Exception("There was an error creating the Mobile Service. Verify the URL"), "Error");
 
@@ -206,7 +200,6 @@ public class MainActivity extends AppCompatActivity
                 startActivity(intent);
             }
         });
-
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
