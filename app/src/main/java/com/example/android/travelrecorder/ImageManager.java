@@ -22,7 +22,7 @@ public class ImageManager {
     https://docs.microsoft.com/en-us/rest/api/storageservices/delegating-access-with-a-shared-access-signature
     and https://docs.microsoft.com/en-us/azure/storage/common/storage-dotnet-shared-access-signature-part-1
     */
-    public static final String storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=travelrecorder;AccountKey=hFF6k/+aYei3ZWXe/5FV4TN8U9qA/RYqWuTzhfvAG9icDtHLKxLwepAAAm/raMhoiZKIK6VYDrg+epyIydJVxw==;EndpointSuffix=core.windows.net";
+    public static final String storageConnectionString = "API key";
 
     private static CloudBlobContainer getContainer() throws Exception {
         // Retrieve storage account from connection-string.
